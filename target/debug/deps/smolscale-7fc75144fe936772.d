@@ -1,0 +1,10 @@
+/home/thisbefruit/Geph/telegram-giftcard-bot/target/debug/deps/libsmolscale-7fc75144fe936772.rmeta: /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/lib.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/executor.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/fastcounter.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/new_executor.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/queues.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/reaper.rs
+
+/home/thisbefruit/Geph/telegram-giftcard-bot/target/debug/deps/smolscale-7fc75144fe936772.d: /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/lib.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/executor.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/fastcounter.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/new_executor.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/queues.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/reaper.rs
+
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/lib.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/executor.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/fastcounter.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/new_executor.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/queues.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/smolscale-0.3.54/src/reaper.rs:

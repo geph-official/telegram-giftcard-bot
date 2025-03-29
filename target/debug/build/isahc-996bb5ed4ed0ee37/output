@@ -1,0 +1,1 @@
+cargo:rustc-env=ISAHC_FEATURES=default,encoding-rs,http2,json,mime,serde,serde-json,static-curl,text-decoding

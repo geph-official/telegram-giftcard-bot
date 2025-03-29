@@ -1,0 +1,1 @@
+{"rustc":8277423686421874925,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[3163605341783942225,"build_script_build",false,11267000266015700797]],"local":[{"RerunIfChanged":{"output":"debug/build/io-lifetimes-e3fc907680ee6602/output","paths":["build.rs"]}}],"rustflags":["-C","link-arg=-fuse-ld=/usr/bin/mold"],"config":0,"compile_kind":0}

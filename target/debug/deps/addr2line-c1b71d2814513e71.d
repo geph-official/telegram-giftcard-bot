@@ -1,0 +1,11 @@
+/home/thisbefruit/Geph/telegram-giftcard-bot/target/debug/deps/libaddr2line-c1b71d2814513e71.rmeta: /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lib.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/frame.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/function.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lazy.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/line.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lookup.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/unit.rs
+
+/home/thisbefruit/Geph/telegram-giftcard-bot/target/debug/deps/addr2line-c1b71d2814513e71.d: /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lib.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/frame.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/function.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lazy.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/line.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lookup.rs /home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/unit.rs
+
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lib.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/frame.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/function.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lazy.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/line.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/lookup.rs:
+/home/thisbefruit/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/addr2line-0.24.2/src/unit.rs:
