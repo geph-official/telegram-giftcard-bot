@@ -131,7 +131,9 @@ update);
 }
 
 pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest::Error> {
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
 
     let body = json!({
         "days_per_card": days,
