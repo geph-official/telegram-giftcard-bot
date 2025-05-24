@@ -141,7 +141,7 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
     });
 
     let response = client
-        .post("https://web-gackend.geph.io/support/create-giftcards")
+        .post("https://web-backend.geph.io/support/create-giftcards")
         .json(&body)
         .send()
         .compat()
