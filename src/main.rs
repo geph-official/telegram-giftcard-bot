@@ -61,7 +61,6 @@ async fn user_in_group(user_id: i64, group_id: i64) -> anyhow::Result<bool> {
             json!({ "chat_id": group_id, "user_id": user_id }),
         )
         .await;
-    println!("{res:?}");
     match res {
         Ok(member_info) => {
             let status = member_info["status"].as_str().unwrap_or_default();
@@ -142,7 +141,7 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
     });
 
     let response = client
-        .post("https://beegsquush.labooyah.be/support/create-giftcards")
+        .post("https://web-gackend.geph.io/support/create-giftcards")
         .json(&body)
         .send()
         .compat()
