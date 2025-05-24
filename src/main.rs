@@ -144,7 +144,6 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
         .post("https://web-backend.geph.io/support/create-giftcards")
         .json(&body)
         .send()
-        .compat()
         .await?
         .text()
         .await?;
