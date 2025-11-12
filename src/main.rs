@@ -103,7 +103,7 @@ async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
                 TELEGRAM
                         .send_msg(Response {
                             text: format!(
-                                "🎉 Congratulations! Here's a 1-day Geph Plus giftcard for you:\n\n恭喜您！这里是一张1天迷雾通 Plus 礼品卡:"
+                                "🎉 Congratulations! Here's a 3-day Geph Plus giftcard for you:\n\n恭喜您！这里是一张3天迷雾通 Plus 礼品卡:"
                             ),
                             chat_id: sender_id,
                             reply_to_message_id: None,
