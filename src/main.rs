@@ -136,7 +136,7 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
 
     let body = json!({
         "days_per_card": days,
-        "num_cards": 3,
+        "num_cards": 1,
         "secret": secret,
     });
 
