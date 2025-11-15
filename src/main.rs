@@ -131,7 +131,9 @@ update);
     } else if matches!(chat_type, "group" | "supergroup") {
         println!("GROUP MESSAGE from: uname={sender_uname}, msg={msg}");
         let bot_mention = format!("@{}", CONFIG.bot_uname);
+        println!("bot_mention = {bot_mention}");
         if msg.contains(&bot_mention) {
+            println!("msg.contains(bot_mention) == true!!!");
             return to_response(
                 "Please <b>private message</b> me to get your giftcard\n\n请<b>私信</b>我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من <b>پیام خصوصی</b> بدهید",
                 update,
