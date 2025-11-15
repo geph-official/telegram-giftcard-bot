@@ -76,25 +76,37 @@ async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
         .as_i64()
         .context("could not get sender id")?;
     let msg = update["message"]["text"].as_str().unwrap_or_default();
+    let msg_id = update["message"]["message_id"]
+        .as_i64()
+        .context("could not get message_id")?;
     let sender_uname = update["message"]["from"]["username"]
         .as_str()
         .unwrap_or_default();
     let chat_type = update["message"]["chat"]["type"]
         .as_str()
         .unwrap_or_default();
+    let chat_id = update["message"]["chat"]["id"]
+        .as_i64()
+        .context("could not get chat id")?;
 
     if chat_type == "private" {
         println!("PM from: uname={sender_uname}, msg={msg}");
         if sender_uname == admin_uname {
             if msg == "#RecipientCount" {
                 let count = STORE.read().redeemed_users.len();
-                return to_response(&format!("🌸 {count} users received giftcards!"), update);
+
+                return to_response(
+                    &format!("🌸 {count} users received giftcards!"),
+                    chat_id,
+                    None,
+                );
             }
         } else {
             if STORE.read().redeemed_users.contains(&sender_id) {
                 return to_response(
                     "🎁 You have already received a giftcard! Each user will only receive 1 giftcard\n\n🧧 您已经获得了一张礼品卡！每名用户可以得到一张礼品卡",
-                    update,
+                    chat_id,
+                    None,
                 );
             }
 
@@ -120,11 +132,12 @@ async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
                     })
                     .await?;
                 return to_response("💳 To redeem the giftcard: open the Geph app --> \"Buy Plus\" / \"Extend\" in the top right corner --> \"Redeem voucher\"\n\n💝 如何兑换礼品卡：打开迷雾通 APP --> 点击右上角的“购买 Plus”或“延长” --> “兑换礼品卡”".into(),
-update);
+chat_id, None);
             } else {
                 return to_response(
                     "⛔ You must join our official group to get a giftcard:\n🚦 您必须加入迷雾通官方群组才能获得礼品卡： https://t.me/gephusers",
-                    update,
+                    chat_id,
+                    None,
                 );
             }
         }
@@ -136,7 +149,8 @@ update);
             println!("msg.contains(bot_mention) == true!!!");
             return to_response(
                 "Please <b>private message</b> me to get your giftcard\n\n请<b>私信</b>我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من <b>پیام خصوصی</b> بدهید",
-                update,
+                chat_id,
+                Some(msg_id),
             );
         }
     }
@@ -167,13 +181,15 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
     Ok(code)
 }
 
-fn to_response(text: &str, responding_to: Value) -> anyhow::Result<Vec<Response>> {
+fn to_response(
+    text: &str,
+    chat_id: i64,
+    reply_to_message_id: Option<i64>,
+) -> anyhow::Result<Vec<Response>> {
     Ok(vec![Response {
         text: text.to_owned(),
-        chat_id: responding_to["message"]["chat"]["id"]
-            .as_i64()
-            .context("could not get chat id")?,
-        reply_to_message_id: None,
+        chat_id,
+        reply_to_message_id,
     }])
 }
 
