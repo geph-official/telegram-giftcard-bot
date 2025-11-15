@@ -71,8 +71,6 @@ async fn user_in_group(user_id: i64, group_id: i64) -> anyhow::Result<bool> {
 }
 
 async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
-    println!("got value: {}", update);
-
     let admin_uname = &CONFIG.admin_uname;
     let sender_id = update["message"]["from"]["id"]
         .as_i64()
@@ -86,7 +84,7 @@ async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
         .unwrap_or_default();
 
     if chat_type == "private" {
-        println!("from: uname={sender_uname}, id={sender_id}");
+        println!("PM from: uname={sender_uname}, msg={msg}");
         if sender_uname == admin_uname {
             if msg == "#RecipientCount" {
                 let count = STORE.read().redeemed_users.len();
@@ -131,6 +129,7 @@ update);
             }
         }
     } else if matches!(chat_type, "group" | "supergroup") {
+        println!("GROUP MESSAGE from: uname={sender_uname}, msg={msg}");
         let bot_mention = format!("@{}", CONFIG.bot_uname);
         if msg.contains(&bot_mention) {
             return to_response(
