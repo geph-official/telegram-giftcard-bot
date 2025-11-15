@@ -148,7 +148,7 @@ chat_id, None);
         if msg.contains(&bot_mention) {
             println!("msg.contains(bot_mention) == true!!!");
             return to_response(
-                "Please <b>private message</b> me to get your giftcard\n\n请<b>私信</b>我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من <b>پیام خصوصی</b> بدهید",
+                "Please private message me to get your giftcard\n\n请私信我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من پیام خصوصی بدهید",
                 chat_id,
                 Some(msg_id),
             );
