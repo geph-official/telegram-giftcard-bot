@@ -79,8 +79,11 @@ async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
     let sender_uname = update["message"]["from"]["username"]
         .as_str()
         .unwrap_or_default();
+    let chat_type = update["message"]["chat"]["type"]
+        .as_str()
+        .unwrap_or_default();
 
-    if update["message"]["chat"]["type"].as_str() == Some("private") {
+    if chat_type == "private" {
         println!("from: uname={sender_uname}, id={sender_id}");
         if sender_uname == admin_uname {
             if msg == "#RecipientCount" {
@@ -124,6 +127,14 @@ update);
                     update,
                 );
             }
+        }
+    } else if matches!(chat_type, "group" | "supergroup") {
+        let bot_mention = format!("@{}", CONFIG.bot_uname);
+        if msg.contains(&bot_mention) {
+            return to_response(
+                "Please <b>private message</b> me to get your giftcard\n\n请<b>私信</b>我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من <b>پیام خصوصی</b> بدهید",
+                update,
+            );
         }
     }
     Ok(vec![])
