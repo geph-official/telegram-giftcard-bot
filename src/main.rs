@@ -71,6 +71,8 @@ async fn user_in_group(user_id: i64, group_id: i64) -> anyhow::Result<bool> {
 }
 
 async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
+    println!("got value: {}", update);
+
     let admin_uname = &CONFIG.admin_uname;
     let sender_id = update["message"]["from"]["id"]
         .as_i64()
@@ -130,7 +132,6 @@ update);
         }
     } else if matches!(chat_type, "group" | "supergroup") {
         let bot_mention = format!("@{}", CONFIG.bot_uname);
-        dbg!(&msg);
         if msg.contains(&bot_mention) {
             return to_response(
                 "Please <b>private message</b> me to get your giftcard\n\n请<b>私信</b>我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من <b>پیام خصوصی</b> بدهید",
