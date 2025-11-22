@@ -6,12 +6,16 @@ use std::{
 use acidjson::AcidJson;
 use anyhow::Context;
 use argh::FromArgs;
-use async_compat::CompatExt;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
-use telegram_bot::{Response, TelegramBot};
+use serde_json::json;
+use teloxide::{
+    dispatching::UpdateFilterExt,
+    payloads::SendMessageSetters,
+    prelude::*,
+    types::{ChatId, ChatMemberStatus, Message, ReplyParameters, User, UserId},
+};
 
 /// configuration yaml file for geph telegram giftcard bot
 #[derive(FromArgs, PartialEq, Debug)]
@@ -44,6 +48,13 @@ struct Store {
     redeemed_users: BTreeSet<i64>,
 }
 
+const MSG_RECIPIENT_COUNT: &str = "🌸 {count} users received giftcards!";
+const MSG_ALREADY_REDEEMED: &str = "🎁 You have already received a giftcard! Each user will only receive 1 giftcard\n\n🧧 您已经获得了一张礼品卡！每名用户可以得到一张礼品卡";
+const MSG_CONGRATS: &str = "🎉 Congratulations! Here's a 3-day Geph Plus giftcard for you:\n\n恭喜您！这里是一张3天迷雾通 Plus 礼品卡:";
+const MSG_REDEEM_STEPS: &str = "💳 To redeem the giftcard: open the Geph app --> \"Buy Plus\" / \"Extend\" in the top right corner --> \"Redeem voucher\"\n\n💝 如何兑换礼品卡：打开迷雾通 APP --> 点击右上角的“购买 Plus”或“延长” --> “兑换礼品卡”";
+const MSG_JOIN_GROUP: &str = "⛔ You must join our official group to get a giftcard:\n🚦 您必须加入迷雾通官方群组才能获得礼品卡： https://t.me/gephusers";
+const MSG_GROUP_REPLY: &str = "Please private message https://t.me/GephGiftcardBot to get your giftcard\n\n请私信 https://t.me/GephGiftcardBot 来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من پیام خصوصی بدهید: https://t.me/GephGiftcardBot";
+
 static STORE: Lazy<AcidJson<Store>> = Lazy::new(|| {
     AcidJson::open_or_else(Path::new(&CONFIG.store_path), || Store {
         redeemed_users: BTreeSet::new(),
@@ -51,110 +62,117 @@ static STORE: Lazy<AcidJson<Store>> = Lazy::new(|| {
     .unwrap()
 });
 
-static TELEGRAM: Lazy<TelegramBot> =
-    Lazy::new(|| TelegramBot::new(&CONFIG.telegram_token, telegram_msg_handler));
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    Lazy::force(&CONFIG);
+    Lazy::force(&STORE);
 
-async fn user_in_group(user_id: i64, group_id: i64) -> anyhow::Result<bool> {
-    let res = TELEGRAM
-        .call_api(
-            "getChatMember",
-            json!({ "chat_id": group_id, "user_id": user_id }),
-        )
+    let bot = Bot::new(CONFIG.telegram_token.clone());
+    let handler = Update::filter_message().endpoint(dispatch_message);
+
+    Dispatcher::builder(bot, handler)
+        .enable_ctrlc_handler()
+        .build()
+        .dispatch()
         .await;
-    match res {
-        Ok(member_info) => {
-            let status = member_info["status"].as_str().unwrap_or_default();
-            Ok(matches!(status, "member" | "administrator" | "creator"))
-        }
-        Err(_) => Ok(false),
-    }
+
+    Ok(())
 }
 
-async fn telegram_msg_handler(update: Value) -> anyhow::Result<Vec<Response>> {
-    let admin_uname = &CONFIG.admin_uname;
-    let sender_id = update["message"]["from"]["id"]
-        .as_i64()
-        .context("could not get sender id")?;
-    let msg = update["message"]["text"].as_str().unwrap_or_default();
-    let msg_id = update["message"]["message_id"]
-        .as_i64()
-        .context("could not get message_id")?;
-    let sender_uname = update["message"]["from"]["username"]
-        .as_str()
-        .unwrap_or_default();
-    let chat_type = update["message"]["chat"]["type"]
-        .as_str()
-        .unwrap_or_default();
-    let chat_id = update["message"]["chat"]["id"]
-        .as_i64()
-        .context("could not get chat id")?;
-
-    if chat_type == "private" {
-        println!("PM from: uname={sender_uname}, msg={msg}");
-        if sender_uname == admin_uname {
-            if msg == "#RecipientCount" {
-                let count = STORE.read().redeemed_users.len();
-
-                return to_response(
-                    &format!("🌸 {count} users received giftcards!"),
-                    chat_id,
-                    None,
-                );
-            }
-        } else {
-            if STORE.read().redeemed_users.contains(&sender_id) {
-                return to_response(
-                    "🎁 You have already received a giftcard! Each user will only receive 1 giftcard\n\n🧧 您已经获得了一张礼品卡！每名用户可以得到一张礼品卡",
-                    chat_id,
-                    None,
-                );
-            }
-
-            if user_in_group(sender_id, CONFIG.geph_group_id).await? {
-                let gc = create_giftcards(CONFIG.days_per_giftcard, &CONFIG.create_giftcard_secret)
-                    .await?;
-                STORE.write().redeemed_users.insert(sender_id);
-
-                TELEGRAM
-                        .send_msg(Response {
-                            text: format!(
-                                "🎉 Congratulations! Here's a 3-day Geph Plus giftcard for you:\n\n恭喜您！这里是一张3天迷雾通 Plus 礼品卡:"
-                            ),
-                            chat_id: sender_id,
-                            reply_to_message_id: None,
-                        })
-                        .await?;
-                TELEGRAM
-                    .send_msg(Response {
-                        text: gc,
-                        chat_id: sender_id,
-                        reply_to_message_id: None,
-                    })
-                    .await?;
-                return to_response("💳 To redeem the giftcard: open the Geph app --> \"Buy Plus\" / \"Extend\" in the top right corner --> \"Redeem voucher\"\n\n💝 如何兑换礼品卡：打开迷雾通 APP --> 点击右上角的“购买 Plus”或“延长” --> “兑换礼品卡”".into(),
-chat_id, None);
-            } else {
-                return to_response(
-                    "⛔ You must join our official group to get a giftcard:\n🚦 您必须加入迷雾通官方群组才能获得礼品卡： https://t.me/gephusers",
-                    chat_id,
-                    None,
-                );
-            }
-        }
-    } else if matches!(chat_type, "group" | "supergroup") {
-        println!("GROUP MESSAGE from: uname={sender_uname}, msg={msg}");
-        let bot_mention = format!("@{}", CONFIG.bot_uname);
-        println!("bot_mention = {bot_mention}");
-        if msg.contains(&bot_mention) {
-            println!("msg.contains(bot_mention) == true!!!");
-            return to_response(
-                "Please [private message](https://t.me/GephGiftcardBot) me to get your giftcard\n\n请[私信](https://t.me/GephGiftcardBot)我来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من [پیام خصوصی](https://t.me/GephGiftcardBot) بدهید",
-                chat_id,
-                Some(msg_id),
-            );
-        }
+async fn dispatch_message(bot: Bot, msg: Message) -> ResponseResult<()> {
+    if let Err(err) = handle_message(bot, msg).await {
+        eprintln!("failed to process message: {err:?}");
     }
-    Ok(vec![])
+
+    Ok(())
+}
+
+async fn handle_message(bot: Bot, msg: Message) -> anyhow::Result<()> {
+    let Some(sender) = msg.from.clone() else {
+        return Ok(());
+    };
+    let text = msg.text().unwrap_or_default().to_owned();
+
+    if msg.chat.is_private() {
+        handle_private_message(&bot, &msg, &sender, &text).await?;
+    } else if msg.chat.is_group() || msg.chat.is_supergroup() {
+        handle_group_message(&bot, &msg, &text).await?;
+    }
+
+    Ok(())
+}
+
+async fn handle_private_message(
+    bot: &Bot,
+    msg: &Message,
+    sender: &User,
+    text: &str,
+) -> anyhow::Result<()> {
+    let chat_id = msg.chat.id;
+    let sender_uname = sender.username.clone().unwrap_or_default();
+    let sender_id: i64 = sender
+        .id
+        .0
+        .try_into()
+        .context("sender id does not fit into i64")?;
+
+    if sender_uname == CONFIG.admin_uname {
+        if text == "#RecipientCount" {
+            let count = STORE.read().redeemed_users.len();
+            let msg = MSG_RECIPIENT_COUNT.replace("{count}", &count.to_string());
+            bot.send_message(chat_id, msg)
+                .await?;
+        }
+        return Ok(());
+    }
+
+    if STORE.read().redeemed_users.contains(&sender_id) {
+        bot.send_message(chat_id, MSG_ALREADY_REDEEMED)
+            .await?;
+        return Ok(());
+    }
+
+    let group_id = ChatId(CONFIG.geph_group_id);
+    if user_in_group(bot, sender.id, group_id).await? {
+        let gc = create_giftcards(CONFIG.days_per_giftcard, &CONFIG.create_giftcard_secret).await?;
+        STORE.write().redeemed_users.insert(sender_id);
+
+        bot.send_message(chat_id, MSG_CONGRATS).await?;
+        bot.send_message(chat_id, &gc).await?;
+        bot.send_message(chat_id, MSG_REDEEM_STEPS).await?;
+    } else {
+        bot.send_message(chat_id, MSG_JOIN_GROUP).await?;
+    }
+
+    Ok(())
+}
+
+async fn handle_group_message(bot: &Bot, msg: &Message, text: &str) -> anyhow::Result<()> {
+    let bot_mention = format!("@{}", CONFIG.bot_uname);
+    if text.contains(&bot_mention) {
+        bot.send_message(
+            msg.chat.id,
+            MSG_GROUP_REPLY,
+        )
+        .reply_parameters(ReplyParameters::new(msg.id))
+        .await?;
+    }
+
+    Ok(())
+}
+
+async fn user_in_group(bot: &Bot, user_id: UserId, group_id: ChatId) -> anyhow::Result<bool> {
+    let member = bot.get_chat_member(group_id, user_id).await;
+    match member {
+        Ok(member) => Ok(matches!(
+            member.status(),
+            ChatMemberStatus::Owner
+                | ChatMemberStatus::Administrator
+                | ChatMemberStatus::Member
+                | ChatMemberStatus::Restricted
+        )),
+        Err(_) => Ok(false),
+    }
 }
 
 pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest::Error> {
@@ -176,26 +194,5 @@ pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest
         .text()
         .await?;
 
-    let code = response.trim().to_string();
-
-    Ok(code)
-}
-
-fn to_response(
-    text: &str,
-    chat_id: i64,
-    reply_to_message_id: Option<i64>,
-) -> anyhow::Result<Vec<Response>> {
-    Ok(vec![Response {
-        text: text.to_owned(),
-        chat_id,
-        reply_to_message_id,
-    }])
-}
-
-fn main() {
-    Lazy::force(&TELEGRAM);
-    loop {
-        std::thread::park();
-    }
+    Ok(response.trim().to_string())
 }
