@@ -14,7 +14,7 @@ use teloxide::{
     dispatching::UpdateFilterExt,
     payloads::SendMessageSetters,
     prelude::*,
-    types::{ChatId, ChatMemberStatus, Message, ReplyParameters, User, UserId},
+    types::{ChatId, Message, ReplyParameters, User, UserId},
 };
 
 /// configuration yaml file for geph telegram giftcard bot
@@ -53,6 +53,7 @@ const MSG_ALREADY_REDEEMED: &str = "🎁 You have already received a giftcard! E
 const MSG_CONGRATS: &str = "🎉 Congratulations! Here's a 3-day Geph Plus giftcard for you:\n\n恭喜您！这里是一张3天迷雾通 Plus 礼品卡:";
 const MSG_REDEEM_STEPS: &str = "💳 To redeem the giftcard: open the Geph app --> \"Buy Plus\" / \"Extend\" in the top right corner --> \"Redeem voucher\"\n\n💝 如何兑换礼品卡：打开迷雾通 APP --> 点击右上角的“购买 Plus”或“延长” --> “兑换礼品卡”";
 const MSG_JOIN_GROUP: &str = "⛔ You must join our official group to get a giftcard:\n🚦 您必须加入迷雾通官方群组才能获得礼品卡： https://t.me/gephusers";
+const MSG_MEMBERSHIP_CHECK_FAILED: &str = "⚠️ I couldn't verify your group membership right now. Please try again later.\n\n⚠️ 暂时无法验证您的群组成员身份。请稍后重试。";
 const MSG_GROUP_REPLY: &str = "Please private message https://t.me/GephGiftcardBot to get your giftcard\n\n请私信 https://t.me/GephGiftcardBot 来领取礼品卡\n\nلطفاً برای دریافت گیفت‌کارت به من پیام خصوصی بدهید: https://t.me/GephGiftcardBot";
 
 static STORE: Lazy<AcidJson<Store>> = Lazy::new(|| {
@@ -120,28 +121,36 @@ async fn handle_private_message(
         if text == "#RecipientCount" {
             let count = STORE.read().redeemed_users.len();
             let msg = MSG_RECIPIENT_COUNT.replace("{count}", &count.to_string());
-            bot.send_message(chat_id, msg)
-                .await?;
+            bot.send_message(chat_id, msg).await?;
         }
         return Ok(());
     }
 
     if STORE.read().redeemed_users.contains(&sender_id) {
-        bot.send_message(chat_id, MSG_ALREADY_REDEEMED)
-            .await?;
+        bot.send_message(chat_id, MSG_ALREADY_REDEEMED).await?;
         return Ok(());
     }
 
     let group_id = ChatId(CONFIG.geph_group_id);
-    if user_in_group(bot, sender.id, group_id).await? {
-        let gc = create_giftcards(CONFIG.days_per_giftcard, &CONFIG.create_giftcard_secret).await?;
-        STORE.write().redeemed_users.insert(sender_id);
 
-        bot.send_message(chat_id, MSG_CONGRATS).await?;
-        bot.send_message(chat_id, &gc).await?;
-        bot.send_message(chat_id, MSG_REDEEM_STEPS).await?;
-    } else {
-        bot.send_message(chat_id, MSG_JOIN_GROUP).await?;
+    match user_in_group(bot, sender.id, group_id).await {
+        Ok(true) => {
+            let gc =
+                create_giftcards(CONFIG.days_per_giftcard, &CONFIG.create_giftcard_secret).await?;
+            STORE.write().redeemed_users.insert(sender_id);
+
+            bot.send_message(chat_id, MSG_CONGRATS).await?;
+            bot.send_message(chat_id, &gc).await?;
+            bot.send_message(chat_id, MSG_REDEEM_STEPS).await?;
+        }
+        Ok(false) => {
+            bot.send_message(chat_id, MSG_JOIN_GROUP).await?;
+        }
+        Err(err) => {
+            eprintln!("failed to check group membership for user {sender_id}: {err:?}");
+            bot.send_message(chat_id, MSG_MEMBERSHIP_CHECK_FAILED)
+                .await?;
+        }
     }
 
     Ok(())
@@ -150,29 +159,21 @@ async fn handle_private_message(
 async fn handle_group_message(bot: &Bot, msg: &Message, text: &str) -> anyhow::Result<()> {
     let bot_mention = format!("@{}", CONFIG.bot_uname);
     if text.contains(&bot_mention) {
-        bot.send_message(
-            msg.chat.id,
-            MSG_GROUP_REPLY,
-        )
-        .reply_parameters(ReplyParameters::new(msg.id))
-        .await?;
+        bot.send_message(msg.chat.id, MSG_GROUP_REPLY)
+            .reply_parameters(ReplyParameters::new(msg.id))
+            .await?;
     }
 
     Ok(())
 }
 
 async fn user_in_group(bot: &Bot, user_id: UserId, group_id: ChatId) -> anyhow::Result<bool> {
-    let member = bot.get_chat_member(group_id, user_id).await;
-    match member {
-        Ok(member) => Ok(matches!(
-            member.status(),
-            ChatMemberStatus::Owner
-                | ChatMemberStatus::Administrator
-                | ChatMemberStatus::Member
-                | ChatMemberStatus::Restricted
-        )),
-        Err(_) => Ok(false),
-    }
+    let member = bot
+        .get_chat_member(group_id, user_id)
+        .await
+        .with_context(|| format!("get_chat_member failed for user {}", user_id.0))?;
+
+    Ok(member.is_present())
 }
 
 pub async fn create_giftcards(days: u32, secret: &str) -> Result<String, reqwest::Error> {
